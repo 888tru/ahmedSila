@@ -1,0 +1,35 @@
+# Бинарники
+/bin/
+/tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Секреты и локальная конфигурация
+.env
+.env.local
+*.pem
+*.key
+!**/testdata/**/*.pem
+
+# Тесты и покрытие
+*.test
+coverage.out
+coverage.html
+
+# Фронтенд
+web/node_modules/
+web/dist/
+web/.vite/
+web/*.local
+
+# Сгенерированный protobuf-код (появится на этапе gRPC-интеграции, см. TECH_STACK.md §6a)
+/gen/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store

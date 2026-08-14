@@ -1,0 +1,73 @@
+version: "3"
+
+dotenv: [".env"]
+
+vars:
+  MIGRATIONS_DIR: ./migrations
+
+tasks:
+  default:
+    cmd: task --list
+
+  up:
+    desc: Поднять Postgres и Redis
+    cmd: docker compose up -d --wait
+
+  down:
+    desc: Остановить контейнеры (данные сохраняются)
+    cmd: docker compose down
+
+  reset:
+    desc: Снести контейнеры вместе с данными
+    cmd: docker compose down -v
+
+  migrate-up:
+    desc: Применить миграции
+    cmd: goose -dir {{.MIGRATIONS_DIR}} postgres "$DATABASE_URL" up
+
+  migrate-down:
+    desc: Откатить последнюю миграцию
+    cmd: goose -dir {{.MIGRATIONS_DIR}} postgres "$DATABASE_URL" down
+
+  migrate-status:
+    desc: Статус миграций
+    cmd: goose -dir {{.MIGRATIONS_DIR}} postgres "$DATABASE_URL" status
+
+  migrate-new:
+    desc: 'Создать миграцию: task migrate-new -- имя_миграции'
+    cmd: goose -dir {{.MIGRATIONS_DIR}} create {{.CLI_ARGS}} sql
+
+  sqlc:
+    desc: Сгенерировать типобезопасный код доступа к БД
+    cmd: sqlc generate
+
+  gen-keys:
+    desc: Сгенерировать Ed25519-ключи для JWT (вывод вставить в .env)
+    cmd: go run ./cmd/genkeys
+
+  run:
+    desc: Запустить сервер
+    cmd: go run ./cmd/server
+
+  test:
+    desc: Все тесты (включая интеграционные на testcontainers)
+    cmd: go test ./... -race -count=1
+
+  test-unit:
+    desc: Только быстрые тесты, без Docker
+    cmd: go test ./... -short -count=1
+
+  lint:
+    desc: golangci-lint
+    cmd: golangci-lint run
+
+  web-dev:
+    desc: Дев-сервер фронтенда
+    dir: web
+    cmd: npm run dev
+
+  check:
+    desc: Всё, что гоняет CI
+    cmds:
+      - task: lint
+      - task: test

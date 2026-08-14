@@ -1,0 +1,38 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose      # незакрытые HTTP-тела
+    - errorlint      # правильная работа с обёрнутыми ошибками
+    - noctx          # HTTP-запросы без context
+    - rowserrcheck   # незамеченные ошибки при обходе sql.Rows
+    - sqlclosecheck  # незакрытые sql.Rows/Stmt
+    - contextcheck   # потерянный context
+    - nilerr         # return nil при ненулевой ошибке
+    - revive
+  settings:
+    revive:
+      rules:
+        - name: unexported-return
+          disabled: true
+  exclusions:
+    rules:
+      # В тестах допускаем длинные функции и захардкоженные значения
+      - path: _test\.go
+        linters: [errcheck, noctx]
+      # Сгенерированный sqlc-код не наш
+      - path: internal/repository/sqlc/
+        linters: [revive, errcheck, staticcheck, unused]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/ahmedsila/superadmin
