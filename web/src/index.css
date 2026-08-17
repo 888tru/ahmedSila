@@ -1,111 +1,105 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@import "@fontsource-variable/inter";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/*
+  Токены дизайн-системы. Единственное место, где живут hex-значения из
+  DESIGN_BRIEF.md — в компонентах цвета берутся только через утилиты Tailwind
+  (bg-surface, text-ink-muted, border-line). Так смена палитры не требует
+  правки разметки.
+*/
+@theme {
+  --color-canvas: #f6f6f4;
+  --color-surface: #ffffff;
+  --color-surface-hover: #fbfbf9;
+  --color-line: #e3e2dd;
+  --color-line-soft: #f0efea;
+  --color-line-strong: #d6d5cf;
+  --color-ink: #1f1e1b;
+  --color-ink-muted: #6b6a64;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  --color-accent: #2f5c8a;
+  --color-accent-hover: #28507a;
+  /* Мягкая подложка акцента — только для активного пункта меню и выбранного
+     сегмента. Заливкой фона акцент не используется (см. бриф). */
+  --color-accent-soft: #f1f4f8;
+
+  --color-ok: #3b6d11;
+  --color-ok-soft: #eaf3de;
+  --color-warn: #854f0b;
+  --color-warn-soft: #faeeda;
+  --color-danger: #a32d2d;
+  --color-danger-soft: #fcebeb;
+  /* Границы под мягкими подложками: акцентной (сообщения команды) и опасной
+     (кнопка удаления) — сам акцент/красный в роли границы слишком криклив. */
+  --color-accent-line: #d5e0ec;
+  --color-danger-line: #e3d3d3;
+
+  --font-sans: "Inter Variable", Inter, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Плотная шкала под таблицы: тело 13px, подписи 11–12.5px, заголовок 18px.
+     Дефолтная шкала Tailwind (14/16px) для такой плотности слишком крупная. */
+  --text-micro: 11px;
+  --text-mini: 11.5px;
+  --text-tiny: 12px;
+  --text-small: 12.5px;
+  --text-body: 13px;
+  --text-lead: 14px;
+  --text-title: 18px;
+  --text-metric: 19px;
+  /* Показатели на «Обзоре» — там строка метрик главный блок, а не подпись
+     к таблице, поэтому на два пункта крупнее. */
+  --text-metric-lg: 21px;
+
+  --radius-control: 5px;
+  --radius-panel: 6px;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Числа везде табличные: колонки в таблице должны выравниваться по разряду,
+     иначе «учётная сетка» рассыпается. */
+  .font-mono,
+  [class*="font-mono"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+@layer components {
+  /*
+    Сигнатурный элемент — «учётная сетка». Колонка шириной 1px между текстовой
+    и числовой частью строки: это не бордер ячейки, а самостоятельная колонка
+    грида, поэтому линия непрерывна и в шапке, и в строках любой высоты.
+    Шапка и строки обязаны использовать один и тот же класс, иначе колонки
+    разъедутся.
+  */
+  .ledger-grid {
+    display: grid;
+    grid-template-columns:
+      minmax(240px, 2.2fr) 150px 1px 130px 170px 130px 96px;
+    align-items: center;
+    min-width: 960px;
   }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
 }
