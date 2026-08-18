@@ -13,13 +13,16 @@ import (
 )
 
 type RouterDeps struct {
-	Logger         zerolog.Logger
-	AllowedOrigins []string
-	Issuer         domain.TokenIssuer
-	Revoker        domain.TokenRevoker
-	Authorizer     domain.Authorizer
-	AuthHandler    *handler.Auth
-	IsProd         bool
+	Logger          zerolog.Logger
+	AllowedOrigins  []string
+	Issuer          domain.TokenIssuer
+	Revoker         domain.TokenRevoker
+	Authorizer      domain.Authorizer
+	AuthHandler     *handler.Auth
+	TeamHandler     *handler.Team
+	JournalHandler  *handler.Journal
+	SettingsHandler *handler.Settings
+	IsProd          bool
 }
 
 // NewRouter собирает маршруты.
@@ -60,6 +63,22 @@ func NewRouter(d RouterDeps) *gin.Engine {
 	authenticated.Use(middleware.Auth(d.Issuer, d.Revoker))
 	{
 		authenticated.GET("/me", d.AuthHandler.Me)
+
+		team := authenticated.Group("/team")
+		{
+			team.GET("", middleware.Require(d.Authorizer, domain.ResourceSuperAdmin, domain.ActionRead), d.TeamHandler.List)
+			team.POST("/invite", middleware.Require(d.Authorizer, domain.ResourceSuperAdmin, domain.ActionCreate), d.TeamHandler.Invite)
+			team.POST("/:id/role", middleware.Require(d.Authorizer, domain.ResourceSuperAdmin, domain.ActionUpdate), d.TeamHandler.UpdateRole)
+			team.DELETE("/:id", middleware.Require(d.Authorizer, domain.ResourceSuperAdmin, domain.ActionDelete), d.TeamHandler.Revoke)
+		}
+
+		authenticated.GET("/journal", middleware.Require(d.Authorizer, domain.ResourceAuditLog, domain.ActionRead), d.JournalHandler.List)
+
+		settings := authenticated.Group("/settings")
+		{
+			settings.GET("", middleware.Require(d.Authorizer, domain.ResourceSettings, domain.ActionRead), d.SettingsHandler.Get)
+			settings.POST("/message-template", middleware.Require(d.Authorizer, domain.ResourceSettings, domain.ActionUpdate), d.SettingsHandler.SaveMessageTemplate)
+		}
 	}
 
 	r.NoRoute(func(c *gin.Context) {

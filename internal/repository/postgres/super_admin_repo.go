@@ -79,6 +79,22 @@ func (r *SuperAdminRepo) RegisterSuccessfulLogin(ctx context.Context, id uuid.UU
 	}))
 }
 
+func (r *SuperAdminRepo) UpdateRole(ctx context.Context, id uuid.UUID, role domain.Role) (*domain.SuperAdminUser, error) {
+	row, err := r.q.UpdateSuperAdminRole(ctx, sqlc.UpdateSuperAdminRoleParams{ID: id, Role: sqlc.SuperAdminRole(role)})
+	if err != nil {
+		return nil, mapError(err)
+	}
+	return toDomainUser(row), nil
+}
+
+func (r *SuperAdminRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.UserStatus) (*domain.SuperAdminUser, error) {
+	row, err := r.q.UpdateSuperAdminStatus(ctx, sqlc.UpdateSuperAdminStatusParams{ID: id, Status: sqlc.SuperAdminStatus(status)})
+	if err != nil {
+		return nil, mapError(err)
+	}
+	return toDomainUser(row), nil
+}
+
 func toDomainUser(row sqlc.SuperAdminUser) *domain.SuperAdminUser {
 	return &domain.SuperAdminUser{
 		ID:                  row.ID,

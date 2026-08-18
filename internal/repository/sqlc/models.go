@@ -147,6 +147,13 @@ type AuditLog struct {
 	CreatedAt  time.Time
 }
 
+type MessageTemplate struct {
+	Key       string
+	Body      string
+	UpdatedAt *time.Time
+	UpdatedBy *uuid.UUID
+}
+
 type RefreshToken struct {
 	ID            uuid.UUID
 	UserID        uuid.UUID
@@ -160,6 +167,17 @@ type RefreshToken struct {
 	UserAgent     string
 	Ip            string
 	CreatedAt     time.Time
+}
+
+type SuperAdminInvitation struct {
+	ID         uuid.UUID
+	Email      string
+	Role       SuperAdminRole
+	TokenHash  []byte
+	InvitedBy  *uuid.UUID
+	ExpiresAt  time.Time
+	AcceptedAt *time.Time
+	CreatedAt  time.Time
 }
 
 type SuperAdminUser struct {

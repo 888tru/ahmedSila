@@ -38,6 +38,7 @@ var defaultPolicy = map[domain.Role][]rule{
 		{domain.ResourceSuperAdmin, crudActions},
 		{domain.ResourceAuditLog, readOnly},
 		{domain.ResourceMetrics, readOnly},
+		{domain.ResourceSettings, crudActions},
 	},
 	domain.RoleAdmin: {
 		{domain.ResourceTenant, tenantActions},
@@ -45,17 +46,20 @@ var defaultPolicy = map[domain.Role][]rule{
 		{domain.ResourceSuperAdmin, readOnly},
 		{domain.ResourceAuditLog, readOnly},
 		{domain.ResourceMetrics, readOnly},
+		{domain.ResourceSettings, crudActions},
 	},
 	domain.RoleSupport: {
 		{domain.ResourceTenant, readOnly},
 		{domain.ResourceSupportTicket, ticketActions},
 		{domain.ResourceMetrics, readOnly},
+		{domain.ResourceSettings, readOnly},
 	},
 	domain.RoleViewer: {
 		{domain.ResourceTenant, readOnly},
 		{domain.ResourceSupportTicket, readOnly},
 		{domain.ResourceAuditLog, readOnly},
 		{domain.ResourceMetrics, readOnly},
+		{domain.ResourceSettings, readOnly},
 	},
 }
 

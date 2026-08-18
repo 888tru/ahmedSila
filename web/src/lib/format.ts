@@ -79,6 +79,20 @@ export function formatRelative(iso: string, now: Date = new Date()): string {
 }
 
 /**
+ * Разбирает дату в формате «14.08.2026» (обратная операция к `formatDate`) —
+ * поля «с»/«по» в произвольном периоде журнала действий. `null` на пустой
+ * строке и на всём, что не похоже на дату: фильтр по такому полю просто не
+ * применяется, а не падает на невалидном вводе.
+ */
+export function parseRuDate(value: string): Date | null {
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value.trim())
+  if (!match) return null
+  const [, day, month, year] = match
+  const date = new Date(Number(year), Number(month) - 1, Number(day))
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+/**
  * Русская плюрализация: plural('клиент', 'клиента', 'клиентов').
  * Intl.PluralRules сам разбирает случай 11–14, руками это регулярно ломают.
  */

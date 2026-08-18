@@ -92,4 +92,13 @@ type SuperAdminRepository interface {
 	RegisterFailedLogin(ctx context.Context, id uuid.UUID, lockedUntil *time.Time) error
 	// RegisterSuccessfulLogin сбрасывает счётчик и пишет last_login_at.
 	RegisterSuccessfulLogin(ctx context.Context, id uuid.UUID, at time.Time) error
+
+	// UpdateRole меняет роль сотрудника. Запрет менять роль владельца —
+	// бизнес-правило usecase, а не репозитория: репозиторий делает то, что
+	// попросили.
+	UpdateRole(ctx context.Context, id uuid.UUID, role Role) (*SuperAdminUser, error)
+	// UpdateStatus — приостановка/возобновление доступа сотрудника.
+	// Отзыв активных сессий — отдельный вызов RefreshTokenRepository.RevokeAllForUser,
+	// сюда не входит: это разные порты с разной зоной ответственности.
+	UpdateStatus(ctx context.Context, id uuid.UUID, status UserStatus) (*SuperAdminUser, error)
 }

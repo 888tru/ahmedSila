@@ -83,6 +83,8 @@ func run() error {
 	users := postgres.NewSuperAdminRepo(pool)
 	tokens := postgres.NewRefreshTokenRepo(pool)
 	audit := postgres.NewAuditRepo(pool, log)
+	invitations := postgres.NewInvitationRepo(pool)
+	messageTemplates := postgres.NewMessageTemplateRepo(pool)
 	revoker := redisx.NewRevoker(redisClient)
 	hasher := hash.NewArgon2(hash.DefaultParams())
 	authorizer := authz.New()
@@ -95,6 +97,9 @@ func run() error {
 			RefreshTTL: cfg.JWT.RefreshTTL,
 		},
 	)
+	teamUC := usecase.NewTeam(users, invitations, tokens, audit, domain.SystemClock{})
+	journalUC := usecase.NewJournal(audit)
+	settingsUC := usecase.NewSettings(messageTemplates, audit, domain.SystemClock{})
 
 	router := delivery.NewRouter(delivery.RouterDeps{
 		Logger:         log,
@@ -109,7 +114,10 @@ func run() error {
 			// браузер не сохранит cookie с localhost
 			handler.DefaultCookieConfig(cfg.App.IsProd(), cfg.JWT.RefreshTTL),
 		),
-		IsProd: cfg.App.IsProd(),
+		TeamHandler:     handler.NewTeam(teamUC),
+		JournalHandler:  handler.NewJournal(journalUC),
+		SettingsHandler: handler.NewSettings(settingsUC),
+		IsProd:          cfg.App.IsProd(),
 	})
 
 	srv := &http.Server{

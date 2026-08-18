@@ -28,9 +28,9 @@ const NAV: readonly NavItem[] = [
   { key: 'overview', label: 'Обзор', icon: IconOverview, to: '/overview' },
   { key: 'clients', label: 'Клиенты', icon: IconClients, to: '/clients' },
   { key: 'tickets', label: 'Обращения', icon: IconTickets, to: '/tickets', badge: 7 },
-  { key: 'audit', label: 'Журнал действий', icon: IconAudit },
-  { key: 'team', label: 'Команда', icon: IconTeam },
-  { key: 'settings', label: 'Настройки', icon: IconSettings },
+  { key: 'audit', label: 'Журнал действий', icon: IconAudit, to: '/journal' },
+  { key: 'team', label: 'Команда', icon: IconTeam, to: '/team' },
+  { key: 'settings', label: 'Настройки', icon: IconSettings, to: '/settings' },
 ]
 
 interface SidebarProps {

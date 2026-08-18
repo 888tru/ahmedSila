@@ -21,6 +21,11 @@ const (
 	AuditTenantSuspended  = "tenant.suspended"
 	AuditTenantResumed    = "tenant.resumed"
 	AuditSuperAdminCreate = "super_admin.created"
+
+	AuditSuperAdminInvited       = "super_admin.invited"
+	AuditSuperAdminRoleChanged   = "super_admin.role_changed"
+	AuditSuperAdminAccessRevoked = "super_admin.access_revoked"
+	AuditMessageTemplateUpdated  = "settings.message_template.updated"
 )
 
 // AuditEntry — одна запись журнала.

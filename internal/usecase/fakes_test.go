@@ -104,6 +104,28 @@ func (f *fakeUsers) RegisterSuccessfulLogin(_ context.Context, id uuid.UUID, at 
 	return nil
 }
 
+func (f *fakeUsers) UpdateRole(_ context.Context, id uuid.UUID, role domain.Role) (*domain.SuperAdminUser, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	u, ok := f.byID[id]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	u.Role = role
+	return clone(u), nil
+}
+
+func (f *fakeUsers) UpdateStatus(_ context.Context, id uuid.UUID, status domain.UserStatus) (*domain.SuperAdminUser, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	u, ok := f.byID[id]
+	if !ok {
+		return nil, domain.ErrNotFound
+	}
+	u.Status = status
+	return clone(u), nil
+}
+
 func equalFold(a, b string) bool {
 	if len(a) != len(b) {
 		return false
@@ -269,6 +291,32 @@ func (f *fakeAudit) actions() []string {
 		out = append(out, e.Action)
 	}
 	return out
+}
+
+type fakeInvitations struct {
+	mu      sync.Mutex
+	pending map[string]bool
+	created []domain.Invitation
+}
+
+func newFakeInvitations() *fakeInvitations {
+	return &fakeInvitations{pending: make(map[string]bool)}
+}
+
+func (f *fakeInvitations) Create(_ context.Context, inv *domain.Invitation) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	inv.ID = uuid.New()
+	inv.CreatedAt = time.Now()
+	f.pending[inv.Email] = true
+	f.created = append(f.created, *inv)
+	return nil
+}
+
+func (f *fakeInvitations) HasPending(_ context.Context, email string) (bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.pending[email], nil
 }
 
 // testClock — управляемое время: тесты на протухание не должны ждать реальных TTL.

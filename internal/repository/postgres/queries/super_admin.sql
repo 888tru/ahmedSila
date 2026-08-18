@@ -33,3 +33,11 @@ UPDATE super_admin_users
 SET totp_secret = $2,
     totp_enrolled_at = $3
 WHERE id = $1;
+
+-- name: UpdateSuperAdminRole :one
+UPDATE super_admin_users SET role = $2 WHERE id = $1
+RETURNING *;
+
+-- name: UpdateSuperAdminStatus :one
+UPDATE super_admin_users SET status = $2 WHERE id = $1
+RETURNING *;

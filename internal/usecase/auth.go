@@ -318,7 +318,7 @@ func (a *Auth) issuePairWithID(ctx context.Context, user *domain.SuperAdminUser,
 		return nil, err
 	}
 
-	rawRefresh, err := generateRefreshToken()
+	rawRefresh, err := generateSecureToken()
 	if err != nil {
 		return nil, err
 	}
@@ -376,12 +376,13 @@ func errReason(err error) string {
 	}
 }
 
-// generateRefreshToken — 32 байта из CSPRNG. Это непрозрачная строка,
-// не JWT: она проверяется только по хешу в БД.
-func generateRefreshToken() (string, error) {
+// generateSecureToken — 32 байта из CSPRNG. Общий генератор для любых
+// непрозрачных токенов (refresh, приглашение в команду): они проверяются
+// только по хешу в БД, сам токен нигде не хранится.
+func generateSecureToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("генерация refresh-токена: %w", err)
+		return "", fmt.Errorf("генерация токена: %w", err)
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }

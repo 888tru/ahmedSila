@@ -12,6 +12,7 @@ const (
 	ResourceSuperAdmin    Resource = "super_admin"
 	ResourceAuditLog      Resource = "audit_log"
 	ResourceMetrics       Resource = "metrics"
+	ResourceSettings      Resource = "settings"
 )
 
 type Action string

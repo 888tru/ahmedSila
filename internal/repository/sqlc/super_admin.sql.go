@@ -196,3 +196,65 @@ func (q *Queries) SetTOTPSecret(ctx context.Context, arg SetTOTPSecretParams) er
 	_, err := q.db.Exec(ctx, setTOTPSecret, arg.ID, arg.TotpSecret, arg.TotpEnrolledAt)
 	return err
 }
+
+const updateSuperAdminRole = `-- name: UpdateSuperAdminRole :one
+UPDATE super_admin_users SET role = $2 WHERE id = $1
+RETURNING id, email, full_name, password_hash, role, status, totp_secret, totp_enrolled_at, failed_login_attempts, locked_until, last_login_at, created_at, updated_at
+`
+
+type UpdateSuperAdminRoleParams struct {
+	ID   uuid.UUID
+	Role SuperAdminRole
+}
+
+func (q *Queries) UpdateSuperAdminRole(ctx context.Context, arg UpdateSuperAdminRoleParams) (SuperAdminUser, error) {
+	row := q.db.QueryRow(ctx, updateSuperAdminRole, arg.ID, arg.Role)
+	var i SuperAdminUser
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.FullName,
+		&i.PasswordHash,
+		&i.Role,
+		&i.Status,
+		&i.TotpSecret,
+		&i.TotpEnrolledAt,
+		&i.FailedLoginAttempts,
+		&i.LockedUntil,
+		&i.LastLoginAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateSuperAdminStatus = `-- name: UpdateSuperAdminStatus :one
+UPDATE super_admin_users SET status = $2 WHERE id = $1
+RETURNING id, email, full_name, password_hash, role, status, totp_secret, totp_enrolled_at, failed_login_attempts, locked_until, last_login_at, created_at, updated_at
+`
+
+type UpdateSuperAdminStatusParams struct {
+	ID     uuid.UUID
+	Status SuperAdminStatus
+}
+
+func (q *Queries) UpdateSuperAdminStatus(ctx context.Context, arg UpdateSuperAdminStatusParams) (SuperAdminUser, error) {
+	row := q.db.QueryRow(ctx, updateSuperAdminStatus, arg.ID, arg.Status)
+	var i SuperAdminUser
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.FullName,
+		&i.PasswordHash,
+		&i.Role,
+		&i.Status,
+		&i.TotpSecret,
+		&i.TotpEnrolledAt,
+		&i.FailedLoginAttempts,
+		&i.LockedUntil,
+		&i.LastLoginAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
