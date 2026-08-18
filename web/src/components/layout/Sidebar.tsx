@@ -24,22 +24,24 @@ interface NavItem {
   badge?: number
 }
 
-const NAV: readonly NavItem[] = [
-  { key: 'overview', label: 'Обзор', icon: IconOverview, to: '/overview' },
-  { key: 'clients', label: 'Клиенты', icon: IconClients, to: '/clients' },
-  { key: 'tickets', label: 'Обращения', icon: IconTickets, to: '/tickets', badge: 7 },
-  { key: 'audit', label: 'Журнал действий', icon: IconAudit, to: '/journal' },
-  { key: 'team', label: 'Команда', icon: IconTeam, to: '/team' },
-  { key: 'settings', label: 'Настройки', icon: IconSettings, to: '/settings' },
-]
-
 interface SidebarProps {
   active: SectionKey
   collapsed: boolean
   onToggleCollapsed: () => void
+  /** Открытых обращений — счётчик у «Обращения», `undefined` пока не загружен. */
+  openTicketsCount?: number
 }
 
-export function Sidebar({ active, collapsed, onToggleCollapsed }: SidebarProps) {
+export function Sidebar({ active, collapsed, onToggleCollapsed, openTicketsCount }: SidebarProps) {
+  const NAV: readonly NavItem[] = [
+    { key: 'overview', label: 'Обзор', icon: IconOverview, to: '/overview' },
+    { key: 'clients', label: 'Клиенты', icon: IconClients, to: '/clients' },
+    { key: 'tickets', label: 'Обращения', icon: IconTickets, to: '/tickets', badge: openTicketsCount },
+    { key: 'audit', label: 'Журнал действий', icon: IconAudit, to: '/journal' },
+    { key: 'team', label: 'Команда', icon: IconTeam, to: '/team' },
+    { key: 'settings', label: 'Настройки', icon: IconSettings, to: '/settings' },
+  ]
+
   return (
     <aside
       className={cn(

@@ -20,9 +20,6 @@ export const PRIORITY_LABEL: Record<TicketPriority, string> = {
 
 export const PRIORITY_OPTIONS: readonly TicketPriority[] = ['low', 'normal', 'high']
 
-/** Сотрудники, на которых можно назначить обращение. */
-export const ASSIGNEES = ['Айдар К.', 'Динара Т.', 'Сауле М.'] as const
-
 export interface GlobalTicket {
   id: string
   clientId: string
@@ -36,11 +33,22 @@ export interface GlobalTicket {
   lastMessageAt: string
   /** Контактное лицо клиента — от его имени идут сообщения с `author: 'client'`. */
   contactName: string
+}
+
+/**
+ * Обращение с полной перепиской — отдельный запрос (`GET /tickets/:id`),
+ * а не поле в списке: список нужен весь и сразу, треды — по одному, тащить
+ * все сообщения всех обращений в список было бы лишним весом ответа.
+ */
+export interface GlobalTicketDetail extends GlobalTicket {
   messages: TicketMessage[]
 }
 
 /** Ключ фильтра-чипа по статусу: «Все» плюс каждый статус. */
 export type TicketStatusFilter = 'all' | TicketStatus
 
-/** Ключ фильтра-чипа по сотруднику: «Все», конкретное имя или «без назначения». */
-export type TicketAssigneeFilter = 'all' | 'unassigned' | (typeof ASSIGNEES)[number]
+/**
+ * Ключ фильтра-чипа по сотруднику: «Все», имя конкретного сотрудника (из
+ * реального списка команды, см. useTeam) или «без назначения».
+ */
+export type TicketAssigneeFilter = 'all' | 'unassigned' | string

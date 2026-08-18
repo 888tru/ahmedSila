@@ -85,6 +85,8 @@ func run() error {
 	audit := postgres.NewAuditRepo(pool, log)
 	invitations := postgres.NewInvitationRepo(pool)
 	messageTemplates := postgres.NewMessageTemplateRepo(pool)
+	tenants := postgres.NewTenantRepo(pool)
+	ticketsRepo := postgres.NewTicketRepo(pool)
 	revoker := redisx.NewRevoker(redisClient)
 	hasher := hash.NewArgon2(hash.DefaultParams())
 	authorizer := authz.New()
@@ -100,6 +102,9 @@ func run() error {
 	teamUC := usecase.NewTeam(users, invitations, tokens, audit, domain.SystemClock{})
 	journalUC := usecase.NewJournal(audit)
 	settingsUC := usecase.NewSettings(messageTemplates, audit, domain.SystemClock{})
+	tenantUC := usecase.NewTenant(tenants, audit, domain.SystemClock{})
+	ticketUC := usecase.NewTicket(ticketsRepo, tenants, users, audit, domain.SystemClock{})
+	overviewUC := usecase.NewOverview(tenants, ticketsRepo, audit, domain.SystemClock{})
 
 	router := delivery.NewRouter(delivery.RouterDeps{
 		Logger:         log,
@@ -115,8 +120,11 @@ func run() error {
 			handler.DefaultCookieConfig(cfg.App.IsProd(), cfg.JWT.RefreshTTL),
 		),
 		TeamHandler:     handler.NewTeam(teamUC),
-		JournalHandler:  handler.NewJournal(journalUC),
+		JournalHandler:  handler.NewJournal(journalUC, users),
 		SettingsHandler: handler.NewSettings(settingsUC),
+		OverviewHandler: handler.NewOverview(overviewUC),
+		TenantHandler:   handler.NewTenant(tenantUC, journalUC, ticketUC),
+		TicketHandler:   handler.NewTicket(ticketUC, users, tenants),
 		IsProd:          cfg.App.IsProd(),
 	})
 

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { replyToTicket, updateTicketStatus } from '@/features/tickets/api'
 import {
   createClient,
   deleteClient,
@@ -41,6 +42,29 @@ export function useClientTickets(id: string) {
   return useQuery({
     queryKey: keys.tickets(id),
     queryFn: ({ signal }) => fetchClientTickets(id, signal),
+  })
+}
+
+/*
+  Ответ и отметка «решено» на вкладке карточки клиента ходят в те же ручки
+  `/api/v1/tickets/:id/...`, что и общий раздел «Обращения» (см.
+  `features/tickets/api.ts`) — это одна и та же сущность, здесь просто другой
+  срез. Инвалидируют `keys.tickets(clientId)`, а не общий ключ `tickets`:
+  экран, с которого ушёл запрос, должен обновиться первым.
+*/
+export function useReplyToClientTicket(clientId: string, ticketId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (text: string) => replyToTicket(ticketId, text),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: keys.tickets(clientId) }),
+  })
+}
+
+export function useMarkClientTicketResolved(clientId: string, ticketId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => updateTicketStatus(ticketId, 'resolved'),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: keys.tickets(clientId) }),
   })
 }
 

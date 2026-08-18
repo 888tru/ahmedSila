@@ -14,67 +14,54 @@ import (
 
 type Journal struct {
 	journal *usecase.Journal
+	users   userLister
 }
 
-func NewJournal(journal *usecase.Journal) *Journal {
-	return &Journal{journal: journal}
+func NewJournal(journal *usecase.Journal, users userLister) *Journal {
+	return &Journal{journal: journal, users: users}
 }
 
 type journalEntryResponse struct {
 	ID         int64     `json:"id"`
 	OccurredAt time.Time `json:"occurred_at"`
 	Actor      string    `json:"actor"`
-	Action     string    `json:"action"`
-	// Kind — категория действия для чипов-фильтров интерфейса (PAGES.md §6):
-	// «Доступ»/«Клиенты»/«Подписка»/«Обращения»/«Команда». Производная от
-	// Action, а не отдельное поле в БД — иначе пришлось бы держать их в
-	// синхроне вручную при каждой новой доменной операции.
-	Kind       string         `json:"kind"`
-	TargetType string         `json:"target_type"`
-	TargetID   string         `json:"target_id"`
-	Metadata   map[string]any `json:"metadata,omitempty"`
+	Kind       string    `json:"kind"`
+	Text       string    `json:"text"`
+	ClientID   *string   `json:"client_id"`
+	ClientName *string   `json:"client_name"`
 }
 
-// actionKind — карта известных действий на категорию экрана. Новое действие
-// без записи здесь попадает в «team» по умолчанию (см. kindOf) — заметно
-// в интерфейсе, что запись не расклассифицирована, и это повод дописать карту,
-// а не молча потерять фильтрацию.
-var actionKind = map[string]string{
-	domain.AuditLoginSuccess:            "access",
-	domain.AuditLoginFailure:            "access",
-	domain.AuditLogout:                  "access",
-	domain.AuditTokenRefresh:            "access",
-	domain.AuditTokenReuse:              "access",
-	domain.AuditSessionsRevoked:         "access",
-	domain.AuditTenantCreated:           "clients",
-	domain.AuditTenantUpdated:           "clients",
-	domain.AuditTenantSuspended:         "access",
-	domain.AuditTenantResumed:           "access",
-	domain.AuditSuperAdminCreate:        "team",
-	domain.AuditSuperAdminInvited:       "team",
-	domain.AuditSuperAdminRoleChanged:   "team",
-	domain.AuditSuperAdminAccessRevoked: "team",
-	domain.AuditMessageTemplateUpdated:  "team",
-}
-
-func kindOf(action string) string {
-	if kind, ok := actionKind[action]; ok {
-		return kind
+// toJournalEntryResponse принимает имена сотрудников готовыми (lookups),
+// а не резолвит по одному: на список это N+1 запросов, а команда — десятки
+// человек, дешевле поднять всех разом (см. buildLookups в ticket.go — тот же
+// приём, только не exported оттуда, дублируется здесь на маленький объём).
+func toJournalEntryResponse(e domain.AuditEntry, actorNames map[uuid.UUID]string) journalEntryResponse {
+	actor := e.ActorEmail
+	if e.ActorID != nil {
+		if name, ok := actorNames[*e.ActorID]; ok && name != "" {
+			actor = name
+		}
 	}
-	return "team"
-}
 
-func toJournalEntryResponse(e domain.AuditEntry) journalEntryResponse {
-	return journalEntryResponse{
+	out := journalEntryResponse{
 		ID:         e.ID,
 		OccurredAt: e.CreatedAt,
-		Actor:      e.ActorEmail,
-		Action:     e.Action,
+		Actor:      actor,
 		Kind:       kindOf(e.Action),
-		TargetType: e.TargetType,
-		TargetID:   e.TargetID,
-		Metadata:   e.Metadata,
+		Text:       describeAction(e),
 	}
+	// tenant_name пишется в метаданные усечённым (см. Tenant.writeAudit,
+	// Ticket.writeAudit) — так «Клиент» в журнале не требует join на каждую
+	// строку и переживает удаление клиента, как actor_email переживает
+	// удаление сотрудника.
+	if e.TargetType == "tenant" && e.TargetID != "" {
+		id := e.TargetID
+		out.ClientID = &id
+		if name := metaString(e.Metadata, "tenant_name"); name != "" {
+			out.ClientName = &name
+		}
+	}
+	return out
 }
 
 // List — GET /api/v1/journal
@@ -91,9 +78,19 @@ func (h *Journal) List(c *gin.Context) {
 		return
 	}
 
+	users, err := h.users.List(c.Request.Context())
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	actorNames := make(map[uuid.UUID]string, len(users))
+	for _, u := range users {
+		actorNames[u.ID] = u.FullName
+	}
+
 	out := make([]journalEntryResponse, 0, len(entries))
 	for _, e := range entries {
-		out = append(out, toJournalEntryResponse(e))
+		out = append(out, toJournalEntryResponse(e, actorNames))
 	}
 	response.List(c, out, response.Meta{Total: total, Limit: filter.Limit, Offset: filter.Offset})
 }

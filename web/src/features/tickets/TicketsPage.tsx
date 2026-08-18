@@ -9,18 +9,26 @@ import { Panel } from '@/components/ui/Panel'
 import { TicketStatusDot } from '@/components/ui/StatusDot'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States'
 import { TICKET_STATUS_LABEL, type TicketStatus } from '@/features/clients/types'
+import { useTeam } from '@/features/team/useTeam'
 import { cn } from '@/lib/cn'
 import { formatDate, formatDateTime, plural } from '@/lib/format'
 import {
-  ASSIGNEES,
   PRIORITY_LABEL,
   PRIORITY_OPTIONS,
   type GlobalTicket,
+  type GlobalTicketDetail,
   type TicketAssigneeFilter,
   type TicketPriority,
   type TicketStatusFilter,
 } from './types'
-import { useTickets } from './useTickets'
+import {
+  useAssignTicketToSelf,
+  useReplyToTicket,
+  useTicket,
+  useTickets,
+  useUpdateTicketPriority,
+  useUpdateTicketStatus,
+} from './useTickets'
 
 /*
   Общий раздел «Обращения» (PAGES.md §5): та же переписка, что и на вкладке
@@ -43,28 +51,21 @@ const STATUS_TONE: Record<TicketStatus, 'ok' | 'warn' | 'danger' | 'muted'> = {
 
 export function TicketsPage() {
   const { data, isPending, isError, refetch } = useTickets()
+  const team = useTeam()
   const [status, setStatus] = useState<TicketStatusFilter>('all')
   const [assignee, setAssignee] = useState<TicketAssigneeFilter>('all')
   const [openTicketId, setOpenTicketId] = useState<string | null>(null)
-  // Приоритет меняется только в интерфейсе — правка не привязана к данным,
-  // пока нет `POST /api/v1/tickets/:id` (см. mock.ts).
-  const [priorityOverrides, setPriorityOverrides] = useState<Record<string, TicketPriority>>({})
-  const [reply, setReply] = useState('')
 
   const tickets = useMemo(() => data ?? [], [data])
-  const withPriority = useMemo(
-    () => tickets.map((ticket) => ({ ...ticket, priority: priorityOverrides[ticket.id] ?? ticket.priority })),
-    [tickets, priorityOverrides],
-  )
+  const assigneeNames = useMemo(() => (team.data ?? []).map((member) => member.name), [team.data])
 
-  const filtered = withPriority.filter(
+  const filtered = tickets.filter(
     (ticket) =>
       (status === 'all' || ticket.status === status) &&
       (assignee === 'all' ||
         (assignee === 'unassigned' ? ticket.assignee === null : ticket.assignee === assignee)),
   )
 
-  const openTicket = withPriority.find((ticket) => ticket.id === openTicketId)
   const isEmpty = !isPending && !isError && tickets.length === 0
   const showEmptyFiltered = !isPending && !isError && !isEmpty && filtered.length === 0
 
@@ -73,11 +74,6 @@ export function TicketsPage() {
   const resetFilters = () => {
     setStatus('all')
     setAssignee('all')
-  }
-
-  const closeThread = () => {
-    setOpenTicketId(null)
-    setReply('')
   }
 
   return (
@@ -94,7 +90,7 @@ export function TicketsPage() {
           </span>
         </div>
 
-        {!isPending && !isError && !isEmpty && !openTicket && (
+        {!isPending && !isError && !isEmpty && !openTicketId && (
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-mini text-ink-muted">Статус</span>
@@ -121,7 +117,7 @@ export function TicketsPage() {
               <span className="text-mini text-ink-muted">Назначен</span>
               <div className="flex flex-wrap gap-1.5">
                 <FilterChip label="Все" selected={assignee === 'all'} onClick={() => setAssignee('all')} />
-                {ASSIGNEES.map((name) => (
+                {assigneeNames.map((name) => (
                   <FilterChip
                     key={name}
                     label={name}
@@ -143,16 +139,8 @@ export function TicketsPage() {
           <Panel>
             <ErrorState onRetry={() => void refetch()} />
           </Panel>
-        ) : openTicket ? (
-          <TicketThread
-            ticket={openTicket}
-            reply={reply}
-            onReply={setReply}
-            onBack={closeThread}
-            onPriorityChange={(priority) =>
-              setPriorityOverrides((state) => ({ ...state, [openTicket.id]: priority }))
-            }
-          />
+        ) : openTicketId ? (
+          <TicketThreadContainer id={openTicketId} onBack={() => setOpenTicketId(null)} />
         ) : isPending ? (
           <ListSkeleton />
         ) : isEmpty ? (
@@ -241,18 +229,75 @@ function TicketsList({
   )
 }
 
+/** Подгружает тред отдельным запросом и держит локальное состояние формы ответа. */
+function TicketThreadContainer({ id, onBack }: { id: string; onBack: () => void }) {
+  const { data: ticket, isPending, isError, refetch } = useTicket(id)
+  const [reply, setReply] = useState('')
+
+  const replyMutation = useReplyToTicket(id)
+  const assignMutation = useAssignTicketToSelf(id)
+  const statusMutation = useUpdateTicketStatus(id)
+  const priorityMutation = useUpdateTicketPriority(id)
+
+  if (isError) {
+    return (
+      <Panel>
+        <ErrorState onRetry={() => void refetch()} />
+      </Panel>
+    )
+  }
+  if (isPending || !ticket) {
+    return (
+      <Panel>
+        <div className="flex flex-col gap-3 p-4">
+          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      </Panel>
+    )
+  }
+
+  return (
+    <TicketThread
+      ticket={ticket}
+      reply={reply}
+      onReply={setReply}
+      onBack={onBack}
+      onPriorityChange={(priority) => priorityMutation.mutate(priority)}
+      onSend={() => replyMutation.mutate(reply, { onSuccess: () => setReply('') })}
+      sending={replyMutation.isPending}
+      onAssignToSelf={() => assignMutation.mutate(undefined)}
+      assigning={assignMutation.isPending}
+      onMarkResolved={() => statusMutation.mutate('resolved')}
+      resolving={statusMutation.isPending}
+    />
+  )
+}
+
 function TicketThread({
   ticket,
   reply,
   onReply,
   onBack,
   onPriorityChange,
+  onSend,
+  sending,
+  onAssignToSelf,
+  assigning,
+  onMarkResolved,
+  resolving,
 }: {
-  ticket: GlobalTicket
+  ticket: GlobalTicketDetail
   reply: string
   onReply: (value: string) => void
   onBack: () => void
   onPriorityChange: (priority: TicketPriority) => void
+  onSend: () => void
+  sending: boolean
+  onAssignToSelf: () => void
+  assigning: boolean
+  onMarkResolved: () => void
+  resolving: boolean
 }) {
   return (
     <Panel>
@@ -324,18 +369,17 @@ function TicketThread({
           aria-label="Ответ на обращение"
         />
         <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={reply.trim() === ''}
-            // Отправка появится вместе с `POST /api/v1/tickets/:id/messages`
-            onClick={() => onReply('')}
-          >
+          <Button variant="primary" size="sm" disabled={reply.trim() === '' || sending} onClick={onSend}>
             Отправить
           </Button>
-          {/* Назначение и статус — тоже без бэкенда: `POST /api/v1/tickets/:id` */}
-          <Button size="sm">Назначить на себя</Button>
-          <Button size="sm" disabled={ticket.status === 'resolved' || ticket.status === 'closed'}>
+          <Button size="sm" disabled={assigning} onClick={onAssignToSelf}>
+            Назначить на себя
+          </Button>
+          <Button
+            size="sm"
+            disabled={resolving || ticket.status === 'resolved' || ticket.status === 'closed'}
+            onClick={onMarkResolved}
+          >
             Отметить решённым
           </Button>
         </div>

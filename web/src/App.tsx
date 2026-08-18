@@ -1,6 +1,10 @@
+import { useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 
+import { LoginPage } from '@/features/auth/LoginPage'
+import { RequireAuth } from '@/features/auth/RequireAuth'
+import { restoreSession } from '@/features/auth/api'
 import { ClientPage } from '@/features/clients/ClientPage'
 import { ClientsPage } from '@/features/clients/ClientsPage'
 import { NewClientPage } from '@/features/clients/NewClientPage'
@@ -36,20 +40,36 @@ const queryClient = new QueryClient({
   Корень ведёт на «Обзор»: это стартовый экран после входа (PAGES.md §1).
 */
 export default function App() {
+  // Один silent refresh на загрузку вкладки: живая refresh-cookie превращается
+  // в access-токен без похода на /login (см. features/auth/api.ts).
+  useEffect(() => {
+    void restoreSession()
+  }, [])
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/overview" element={<OverviewPage />} />
-          <Route path="/tickets" element={<TicketsPage />} />
-          <Route path="/clients" element={<ClientsPage />} />
-          <Route path="/clients/new" element={<NewClientPage />} />
-          <Route path="/clients/:clientId" element={<ClientPage />} />
-          <Route path="/clients/:clientId/:tab" element={<ClientPage />} />
-          <Route path="/journal" element={<JournalPage />} />
-          <Route path="/team" element={<TeamPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<Navigate to="/overview" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="*"
+            element={
+              <RequireAuth>
+                <Routes>
+                  <Route path="/overview" element={<OverviewPage />} />
+                  <Route path="/tickets" element={<TicketsPage />} />
+                  <Route path="/clients" element={<ClientsPage />} />
+                  <Route path="/clients/new" element={<NewClientPage />} />
+                  <Route path="/clients/:clientId" element={<ClientPage />} />
+                  <Route path="/clients/:clientId/:tab" element={<ClientPage />} />
+                  <Route path="/journal" element={<JournalPage />} />
+                  <Route path="/team" element={<TeamPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="*" element={<Navigate to="/overview" replace />} />
+                </Routes>
+              </RequireAuth>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

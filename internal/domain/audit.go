@@ -26,6 +26,14 @@ const (
 	AuditSuperAdminRoleChanged   = "super_admin.role_changed"
 	AuditSuperAdminAccessRevoked = "super_admin.access_revoked"
 	AuditMessageTemplateUpdated  = "settings.message_template.updated"
+
+	AuditTenantActivationCodeIssued = "tenant.activation_code_issued"
+	AuditTenantDeleted              = "tenant.deleted"
+
+	AuditTicketReplied         = "support_ticket.replied"
+	AuditTicketAssigned        = "support_ticket.assigned"
+	AuditTicketStatusChanged   = "support_ticket.status_changed"
+	AuditTicketPriorityChanged = "support_ticket.priority_changed"
 )
 
 // AuditEntry — одна запись журнала.

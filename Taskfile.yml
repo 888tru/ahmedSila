@@ -45,6 +45,10 @@ tasks:
     desc: Сгенерировать Ed25519-ключи для JWT (вывод вставить в .env)
     cmd: go run ./cmd/genkeys
 
+  seed:
+    desc: Наполнить БД демо-данными (первый owner, команда, клиенты, обращения)
+    cmd: go run ./cmd/seed
+
   run:
     desc: Запустить сервер
     cmd: go run ./cmd/server

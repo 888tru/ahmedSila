@@ -8,7 +8,7 @@ import { ErrorState, Skeleton } from '@/components/ui/States'
 import { cn } from '@/lib/cn'
 import { formatDate, formatDateTime } from '@/lib/format'
 import type { Ticket } from '../types'
-import { useClientTickets } from '../useClients'
+import { useClientTickets, useMarkClientTicketResolved, useReplyToClientTicket } from '../useClients'
 
 const GRID = 'grid grid-cols-[minmax(0,1fr)_130px_110px_1px_130px] items-center px-[15px]'
 
@@ -34,7 +34,7 @@ export function ClientTicketsTab({ clientId }: { clientId: string }) {
 
   const open = tickets.find((ticket) => ticket.id === openTicketId)
   if (open) {
-    return <TicketThread ticket={open} onBack={() => setOpenTicketId(null)} />
+    return <TicketThread clientId={clientId} ticket={open} onBack={() => setOpenTicketId(null)} />
   }
 
   if (tickets.length === 0) {
@@ -88,8 +88,18 @@ export function ClientTicketsTab({ clientId }: { clientId: string }) {
   )
 }
 
-function TicketThread({ ticket, onBack }: { ticket: Ticket; onBack: () => void }) {
+function TicketThread({
+  clientId,
+  ticket,
+  onBack,
+}: {
+  clientId: string
+  ticket: Ticket
+  onBack: () => void
+}) {
   const [reply, setReply] = useState('')
+  const replyMutation = useReplyToClientTicket(clientId, ticket.id)
+  const resolveMutation = useMarkClientTicketResolved(clientId, ticket.id)
 
   return (
     <Panel>
@@ -147,13 +157,16 @@ function TicketThread({ ticket, onBack }: { ticket: Ticket; onBack: () => void }
           <Button
             variant="primary"
             size="sm"
-            disabled={reply.trim() === ''}
-            // Отправка появится вместе с `POST /api/v1/tickets/:id/messages`
-            onClick={() => setReply('')}
+            disabled={reply.trim() === '' || replyMutation.isPending}
+            onClick={() => replyMutation.mutate(reply, { onSuccess: () => setReply('') })}
           >
             Отправить
           </Button>
-          <Button size="sm" disabled={ticket.status === 'resolved' || ticket.status === 'closed'}>
+          <Button
+            size="sm"
+            disabled={resolveMutation.isPending || ticket.status === 'resolved' || ticket.status === 'closed'}
+            onClick={() => resolveMutation.mutate(undefined)}
+          >
             Отметить решённым
           </Button>
         </div>

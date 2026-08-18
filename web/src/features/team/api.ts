@@ -2,9 +2,32 @@ import { request, USE_MOCK } from '@/lib/http'
 import { mockTeamStore } from './mock'
 import type { TeamMember, TeamRole } from './types'
 
+interface TeamMemberWire {
+  id: string
+  name: string
+  email: string
+  role: TeamRole
+  two_factor_enabled: boolean
+  last_login_at: string | null
+  is_me: boolean
+}
+
+function fromWire(m: TeamMemberWire): TeamMember {
+  return {
+    id: m.id,
+    name: m.name,
+    email: m.email,
+    role: m.role,
+    twoFactorEnabled: m.two_factor_enabled,
+    lastLoginAt: m.last_login_at,
+    isMe: m.is_me,
+  }
+}
+
 export async function fetchTeam(signal?: AbortSignal): Promise<TeamMember[]> {
   if (USE_MOCK) return mockTeamStore.list()
-  return request<TeamMember[]>('/team', { signal })
+  const members = await request<TeamMemberWire[]>('/team', { signal })
+  return members.map(fromWire)
 }
 
 /**
@@ -28,10 +51,11 @@ export async function updateTeamMemberRole(id: string, role: TeamRole): Promise<
     if (!member) throw new Error(`Сотрудник ${id} не найден`)
     return member
   }
-  return request<TeamMember>(`/team/${id}/role`, {
+  const wire = await request<TeamMemberWire>(`/team/${id}/role`, {
     method: 'POST',
     body: JSON.stringify({ role }),
   })
+  return fromWire(wire)
 }
 
 export async function revokeTeamMember(id: string): Promise<void> {

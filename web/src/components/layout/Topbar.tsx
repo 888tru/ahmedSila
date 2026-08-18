@@ -20,10 +20,12 @@ interface TopbarProps {
   breadcrumbs: readonly Crumb[]
   /** Поиск есть не на всех экранах — на карточке клиента искать нечего. */
   search?: TopbarSearch
-  user: { initials: string; name: string }
+  /** `null` — данные пользователя ещё не пришли (между restoreSession и /me). */
+  user: { initials: string; name: string } | null
+  onLogout: () => void
 }
 
-export function Topbar({ breadcrumbs, search, user }: TopbarProps) {
+export function Topbar({ breadcrumbs, search, user, onLogout }: TopbarProps) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-4 border-b border-line bg-surface px-5">
       <nav
@@ -67,16 +69,25 @@ export function Topbar({ breadcrumbs, search, user }: TopbarProps) {
             className="w-[220px] bg-canvas focus:bg-surface"
           />
         )}
-        <div className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className="flex size-[26px] items-center justify-center rounded-full border border-line
-                       bg-line-soft text-micro font-medium text-ink-muted"
-          >
-            {user.initials}
-          </span>
-          <span className="text-tiny text-ink-muted">{user.name}</span>
-        </div>
+        {user && (
+          <div className="flex items-center gap-2">
+            <span
+              aria-hidden
+              className="flex size-[26px] items-center justify-center rounded-full border border-line
+                         bg-line-soft text-micro font-medium text-ink-muted"
+            >
+              {user.initials}
+            </span>
+            <span className="text-tiny text-ink-muted">{user.name}</span>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="text-tiny text-ink-muted transition-colors duration-100 hover:text-ink"
+            >
+              Выйти
+            </button>
+          </div>
+        )}
       </div>
     </header>
   )

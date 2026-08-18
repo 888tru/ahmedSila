@@ -1,4 +1,4 @@
-import type { GlobalTicket } from './types'
+import type { GlobalTicketDetail } from './types'
 
 /*
   Демо-данные «Обращений». Существуют, пока в бэкенде нет общей ручки по
@@ -12,7 +12,7 @@ import type { GlobalTicket } from './types'
   noop`) — они появятся вместе с `POST /api/v1/tickets/:id`.
 */
 
-export const TICKETS: readonly GlobalTicket[] = [
+export const TICKETS: readonly GlobalTicketDetail[] = [
   {
     id: 't-1',
     clientId: '5',
@@ -144,6 +144,11 @@ export const TICKETS: readonly GlobalTicket[] = [
   },
 ]
 
-export function listTickets(): GlobalTicket[] {
-  return TICKETS.map((ticket) => ({ ...ticket }))
+export function listTickets(): GlobalTicketDetail[] {
+  return TICKETS.map((ticket) => ({ ...ticket, messages: ticket.messages.map((m) => ({ ...m })) }))
+}
+
+export function getTicket(id: string): GlobalTicketDetail | undefined {
+  const ticket = TICKETS.find((t) => t.id === id)
+  return ticket && { ...ticket, messages: ticket.messages.map((m) => ({ ...m })) }
 }

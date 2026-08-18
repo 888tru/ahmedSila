@@ -134,6 +134,311 @@ func AllSuperAdminStatusValues() []SuperAdminStatus {
 	}
 }
 
+type TenantPlan string
+
+const (
+	TenantPlanStarter    TenantPlan = "Starter"
+	TenantPlanGrowth     TenantPlan = "Growth"
+	TenantPlanEnterprise TenantPlan = "Enterprise"
+)
+
+func (e *TenantPlan) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TenantPlan(s)
+	case string:
+		*e = TenantPlan(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TenantPlan: %T", src)
+	}
+	return nil
+}
+
+type NullTenantPlan struct {
+	TenantPlan TenantPlan
+	Valid      bool // Valid is true if TenantPlan is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTenantPlan) Scan(value interface{}) error {
+	if value == nil {
+		ns.TenantPlan, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TenantPlan.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTenantPlan) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TenantPlan), nil
+}
+
+func (e TenantPlan) Valid() bool {
+	switch e {
+	case TenantPlanStarter,
+		TenantPlanGrowth,
+		TenantPlanEnterprise:
+		return true
+	}
+	return false
+}
+
+func AllTenantPlanValues() []TenantPlan {
+	return []TenantPlan{
+		TenantPlanStarter,
+		TenantPlanGrowth,
+		TenantPlanEnterprise,
+	}
+}
+
+type TenantStatus string
+
+const (
+	TenantStatusActive TenantStatus = "active"
+	TenantStatusTrial  TenantStatus = "trial"
+	TenantStatusPaused TenantStatus = "paused"
+)
+
+func (e *TenantStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TenantStatus(s)
+	case string:
+		*e = TenantStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TenantStatus: %T", src)
+	}
+	return nil
+}
+
+type NullTenantStatus struct {
+	TenantStatus TenantStatus
+	Valid        bool // Valid is true if TenantStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTenantStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.TenantStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TenantStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTenantStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TenantStatus), nil
+}
+
+func (e TenantStatus) Valid() bool {
+	switch e {
+	case TenantStatusActive,
+		TenantStatusTrial,
+		TenantStatusPaused:
+		return true
+	}
+	return false
+}
+
+func AllTenantStatusValues() []TenantStatus {
+	return []TenantStatus{
+		TenantStatusActive,
+		TenantStatusTrial,
+		TenantStatusPaused,
+	}
+}
+
+type TicketMessageAuthor string
+
+const (
+	TicketMessageAuthorClient TicketMessageAuthor = "client"
+	TicketMessageAuthorTeam   TicketMessageAuthor = "team"
+)
+
+func (e *TicketMessageAuthor) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TicketMessageAuthor(s)
+	case string:
+		*e = TicketMessageAuthor(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TicketMessageAuthor: %T", src)
+	}
+	return nil
+}
+
+type NullTicketMessageAuthor struct {
+	TicketMessageAuthor TicketMessageAuthor
+	Valid               bool // Valid is true if TicketMessageAuthor is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTicketMessageAuthor) Scan(value interface{}) error {
+	if value == nil {
+		ns.TicketMessageAuthor, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TicketMessageAuthor.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTicketMessageAuthor) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TicketMessageAuthor), nil
+}
+
+func (e TicketMessageAuthor) Valid() bool {
+	switch e {
+	case TicketMessageAuthorClient,
+		TicketMessageAuthorTeam:
+		return true
+	}
+	return false
+}
+
+func AllTicketMessageAuthorValues() []TicketMessageAuthor {
+	return []TicketMessageAuthor{
+		TicketMessageAuthorClient,
+		TicketMessageAuthorTeam,
+	}
+}
+
+type TicketPriority string
+
+const (
+	TicketPriorityLow    TicketPriority = "low"
+	TicketPriorityNormal TicketPriority = "normal"
+	TicketPriorityHigh   TicketPriority = "high"
+)
+
+func (e *TicketPriority) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TicketPriority(s)
+	case string:
+		*e = TicketPriority(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TicketPriority: %T", src)
+	}
+	return nil
+}
+
+type NullTicketPriority struct {
+	TicketPriority TicketPriority
+	Valid          bool // Valid is true if TicketPriority is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTicketPriority) Scan(value interface{}) error {
+	if value == nil {
+		ns.TicketPriority, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TicketPriority.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTicketPriority) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TicketPriority), nil
+}
+
+func (e TicketPriority) Valid() bool {
+	switch e {
+	case TicketPriorityLow,
+		TicketPriorityNormal,
+		TicketPriorityHigh:
+		return true
+	}
+	return false
+}
+
+func AllTicketPriorityValues() []TicketPriority {
+	return []TicketPriority{
+		TicketPriorityLow,
+		TicketPriorityNormal,
+		TicketPriorityHigh,
+	}
+}
+
+type TicketStatus string
+
+const (
+	TicketStatusOpen       TicketStatus = "open"
+	TicketStatusInProgress TicketStatus = "in_progress"
+	TicketStatusResolved   TicketStatus = "resolved"
+	TicketStatusClosed     TicketStatus = "closed"
+)
+
+func (e *TicketStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TicketStatus(s)
+	case string:
+		*e = TicketStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TicketStatus: %T", src)
+	}
+	return nil
+}
+
+type NullTicketStatus struct {
+	TicketStatus TicketStatus
+	Valid        bool // Valid is true if TicketStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTicketStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.TicketStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TicketStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTicketStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TicketStatus), nil
+}
+
+func (e TicketStatus) Valid() bool {
+	switch e {
+	case TicketStatusOpen,
+		TicketStatusInProgress,
+		TicketStatusResolved,
+		TicketStatusClosed:
+		return true
+	}
+	return false
+}
+
+func AllTicketStatusValues() []TicketStatus {
+	return []TicketStatus{
+		TicketStatusOpen,
+		TicketStatusInProgress,
+		TicketStatusResolved,
+		TicketStatusClosed,
+	}
+}
+
 type AuditLog struct {
 	ID         int64
 	ActorID    *uuid.UUID
@@ -194,4 +499,47 @@ type SuperAdminUser struct {
 	LastLoginAt         *time.Time
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
+}
+
+type SupportTicket struct {
+	ID            uuid.UUID
+	TenantID      uuid.UUID
+	Subject       string
+	Status        TicketStatus
+	Priority      TicketPriority
+	AssigneeID    *uuid.UUID
+	ContactName   string
+	LastMessageAt time.Time
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+type SupportTicketMessage struct {
+	ID         uuid.UUID
+	TicketID   uuid.UUID
+	Author     TicketMessageAuthor
+	AuthorName string
+	AuthorID   *uuid.UUID
+	Body       string
+	SentAt     time.Time
+}
+
+type Tenant struct {
+	ID                      uuid.UUID
+	Name                    string
+	City                    string
+	Address                 string
+	Status                  TenantStatus
+	Plan                    TenantPlan
+	Employees               int32
+	OwnerName               string
+	Phone                   string
+	Email                   string
+	LastActiveAt            *time.Time
+	TrialEndsAt             *time.Time
+	SuspendedReason         *string
+	ActivationCode          *string
+	ActivationCodeExpiresAt *time.Time
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
 }

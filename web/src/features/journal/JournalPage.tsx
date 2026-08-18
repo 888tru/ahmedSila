@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Field'
 import { EmptyState, ErrorState, Skeleton } from '@/components/ui/States'
 import { cn } from '@/lib/cn'
 import { formatDateTime, parseRuDate, plural } from '@/lib/format'
-import { ASSIGNEES } from '@/features/tickets/types'
+import { useTeam } from '@/features/team/useTeam'
 import {
   KIND_LABEL,
   KIND_ORDER,
@@ -36,6 +36,7 @@ const PERIODS: ReadonlyArray<{ key: JournalPeriod; label: string }> = [
 
 export function JournalPage() {
   const { data, isPending, isError, refetch } = useJournal()
+  const team = useTeam()
   const [actor, setActor] = useState<JournalActorFilter>('all')
   const [kind, setKind] = useState<JournalKindFilter>('all')
   const [period, setPeriod] = useState<JournalPeriod>('7')
@@ -94,8 +95,13 @@ export function JournalPage() {
           <div className="flex flex-col gap-2">
             <FilterRow label="Сотрудник">
               <FilterChip label="Все" selected={actor === 'all'} onClick={() => setActor('all')} />
-              {ASSIGNEES.map((name) => (
-                <FilterChip key={name} label={name} selected={actor === name} onClick={() => setActor(name)} />
+              {(team.data ?? []).map((member) => (
+                <FilterChip
+                  key={member.id}
+                  label={member.name}
+                  selected={actor === member.name}
+                  onClick={() => setActor(member.name)}
+                />
               ))}
             </FilterRow>
 
